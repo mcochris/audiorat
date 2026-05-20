@@ -9,7 +9,7 @@ edition = "2021"
 [profile.release]
 codegen-units = 1 # Allows LLVM to perform better optimization.
 lto = true        # Enables link-time-optimizations.
-opt-level = "3"   # Prioritizes small binary size. Use `3` if you prefer speed.
+opt-level = 3   # Prioritizes small binary size. Use `3` if you prefer speed.
 panic = "abort"   # Higher performance by disabling panic handlers.
 strip = true      # Ensures debug symbols are removed.
 debug = false     # Don't include debug symbols in release builds.
@@ -29,3 +29,8 @@ tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+dirs-next = "2"
+rodio = { version = "0.21", features = ["playback", "symphonia-all"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+blake3 = "1"
+symphonia = { version = "0.5", features = ["all"] }
