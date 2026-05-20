@@ -1,4 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
+import {
+	PhysicalPosition,
+	PhysicalSize,
+	currentMonitor,
+	getCurrentWindow,
+} from "@tauri-apps/api/window";
 
 const directoryDiv = document.querySelector("#directory") as HTMLDivElement;
 const currentPathDiv = document.querySelector("#currentPath") as HTMLDivElement;
@@ -8,6 +14,37 @@ let homeDirectory = "";
 let pathSeparator = "/";
 
 let path = "";
+
+//=============================================================================
+// Resize and center the window to use most of the current monitor work area
+//=============================================================================
+async function resizeWindowToDisplay() {
+	if (!("__TAURI_INTERNALS__" in window)) {
+		return;
+	}
+
+	try {
+		const monitor = await currentMonitor();
+
+		if (!monitor) {
+			return;
+		}
+
+		const workArea = monitor.workArea;
+		const targetWidth = Math.floor(workArea.size.width * 0.5);
+		const targetHeight = Math.floor(workArea.size.height * 0.5);
+
+		const x = workArea.position.x + Math.floor((workArea.size.width - targetWidth) / 2);
+		const y = workArea.position.y + Math.floor((workArea.size.height - targetHeight) / 2);
+
+		const appWindow = getCurrentWindow();
+
+		await appWindow.setSize(new PhysicalSize(targetWidth, targetHeight));
+		await appWindow.setPosition(new PhysicalPosition(x, y));
+	} catch (error) {
+		console.warn("Unable to resize window on startup:", error);
+	}
+}
 
 //=============================================================================
 // List directories and music files in the current path
@@ -60,6 +97,8 @@ async function listDirectories() {
 // Initial display
 //=============================================================================
 async function initializeApp() {
+	await resizeWindowToDisplay();
+
 	homeDirectory = await invoke("get_home_directory") as string;
 	pathSeparator = await invoke("get_path_separator") as string;
 	path = homeDirectory;
