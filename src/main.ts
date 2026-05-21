@@ -9,6 +9,7 @@ import {
 import "bootstrap/dist/css/bootstrap.min.css";
 // @ts-expect-error - bootstrap doesn't have type definitions
 import * as bootstrap from "bootstrap";
+import "./theme_toggle.js";
 
 const directoryDiv = document.querySelector("#directory") as HTMLDivElement;
 const currentPathDiv = document.querySelector("#currentPath") as HTMLDivElement;
