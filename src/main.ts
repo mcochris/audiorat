@@ -7,8 +7,11 @@ import {
 } from "@tauri-apps/api/window";
 
 import "bootstrap/dist/css/bootstrap.min.css";
+import "tabulator-tables/dist/css/tabulator.min.css";
 // @ts-expect-error - bootstrap doesn't have type definitions
 import * as bootstrap from "bootstrap";
+// @ts-expect-error - bootstrap doesn't have type definitions
+import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import "./theme_toggle.js";
 
 const directoryDiv = document.querySelector("#directory") as HTMLDivElement;
@@ -279,104 +282,121 @@ async function listMusicFiles() {
 		return;
 	}
 
-	const table = await createMusicTable(musicFiles);
-	musicFilesDiv.appendChild(table);
+	// const table = await createMusicTable(musicFiles);
+	// musicFilesDiv.appendChild(table);
+
+	const tableData: { id: number; filepath: string; rating: number | false | null; clear: string }[] = [];
+
+	for (const [index, filePath] of musicFiles.entries()) {
+		tableData.push({
+			id: index,
+			filepath: filePath,
+			rating: await invoke<number | null | false>("get_rating", { "pathname": filePath }),
+			clear: ""
+		});
+	}
+
+	var table = new Tabulator("#musicfiles", {
+		data: tableData, //assign data to table
+		autoColumns: true, //create columns from data field names
+	});
+
 }
 
 //=============================================================================
 // Create a table to display music files with play buttons and rating options
 // This function generates a table where each row represents a music file, with a play button and rating radio buttons
 //=============================================================================
-async function createMusicTable(musicFiles: string[]) {
-	const table = document.createElement("table");
-	const tbody = document.createElement("tbody");
+// async function createMusicTable(musicFiles: string[]) {
+// 	const table = document.createElement("table");
+// 	const tbody = document.createElement("tbody");
 
-	for (const [index, filePath] of musicFiles.entries()) {
-		const tr = document.createElement("tr");
+// 	for (const [index, filePath] of musicFiles.entries()) {
+// 		const tr = document.createElement("tr");
 
-		//
-		// Column 1: Play button
-		//
-		const playTd = document.createElement("td");
+// 		//
+// 		// Column 1: Play button
+// 		//
+// 		const playTd = document.createElement("td");
 
-		const playButton = document.createElement("button");
+// 		const playButton = document.createElement("button");
 
-		playButton.classList.add("play-button");
-		playButton.dataset.action = "play-toggle";
-		playButton.dataset.filePath = filePath;
+// 		playButton.classList.add("play-button");
+// 		playButton.dataset.action = "play-toggle";
+// 		playButton.dataset.filePath = filePath;
 
-		playButton.textContent = "Play";
-		playButton.type = "button";
+// 		playButton.textContent = "Play";
+// 		playButton.type = "button";
 
-		playTd.appendChild(playButton);
+// 		playTd.appendChild(playButton);
 
-		//
-		// Column 2: Rating radio buttons + Clear button
-		//
-		const ratingTd = document.createElement("td");
+// 		//
+// 		// Column 2: Rating radio buttons + Clear button
+// 		//
+// 		const ratingTd = document.createElement("td");
 
-		for (let rating = 1; rating <= 5; rating++) {
-			const label = document.createElement("label");
-			const radio = document.createElement("input");
+// 		for (let rating = 1; rating <= 5; rating++) {
+// 			const label = document.createElement("label");
+// 			const radio = document.createElement("input");
 
-			radio.type = "radio";
-			radio.name = `rating-${index}`;
-			radio.value = String(rating);
-			radio.dataset.filePath = filePath;
-			radio.dataset.rating = String(rating);
+// 			radio.type = "radio";
+// 			radio.name = `rating-${index}`;
+// 			radio.value = String(rating);
+// 			radio.dataset.filePath = filePath;
+// 			radio.dataset.rating = String(rating);
 
-			// Get the current rating for this file and set the radio button if it matches
-			// const fileSize = await invoke("get_file_size", { "pathname": filePath });
-			// const lastModified = await invoke("get_modified_time", { "pathname": filePath });
+// 			// Get the current rating for this file and set the radio button if it matches
+// 			// const fileSize = await invoke("get_file_size", { "pathname": filePath });
+// 			// const lastModified = await invoke("get_modified_time", { "pathname": filePath });
 
-			await invoke<number | null | false>("get_rating", { "pathname": filePath }).then((currentRating) => {
-				if (currentRating === rating) {
-					radio.checked = true;
-				}
-			});
+// 			await invoke<number | null | false>("get_rating", { "pathname": filePath }).then((currentRating) => {
+// 				if (currentRating === rating) {
+// 					radio.checked = true;
+// 				}
+// 			});
 
-			label.appendChild(radio);
+// 			label.appendChild(radio);
 
-			label.appendChild(
-				document.createTextNode(` ${rating} `)
-			);
+// 			label.appendChild(
+// 				document.createTextNode(` ${rating} `)
+// 			);
 
-			ratingTd.appendChild(label);
-		}
+// 			ratingTd.appendChild(label);
+// 		}
 
-		//
-		// Clear button
-		//
-		const clearButton = document.createElement("button");
+// 		//
+// 		// Clear button
+// 		//
+// 		const clearButton = document.createElement("button");
 
-		clearButton.textContent = "Clear";
-		clearButton.type = "button";
-		clearButton.dataset.action = "clear-rating";
-		clearButton.dataset.filePath = filePath;
+// 		clearButton.textContent = "Clear";
+// 		clearButton.type = "button";
+// 		clearButton.dataset.action = "clear-rating";
+// 		clearButton.dataset.filePath = filePath;
 
-		ratingTd.appendChild(clearButton);
+// 		ratingTd.appendChild(clearButton);
 
-		//
-		// Column 3: File pathname
-		//
-		const fileTd = document.createElement("td");
+// 		//
+// 		// Column 3: File pathname
+// 		//
+// 		const fileTd = document.createElement("td");
 
-		fileTd.textContent = filePath.split(pathSeparator as string).pop() || filePath;
+// 		fileTd.textContent = filePath.split(pathSeparator as string).pop() || filePath;
 
-		//
-		// Assemble row
-		//
-		tr.appendChild(playTd);
-		tr.appendChild(ratingTd);
-		tr.appendChild(fileTd);
+// 		//
+// 		// Assemble row
+// 		//
+// 		tr.appendChild(playTd);
+// 		tr.appendChild(ratingTd);
+// 		tr.appendChild(fileTd);
 
-		tbody.appendChild(tr);
-	}
+// 		tbody.appendChild(tr);
+// 	}
 
-	table.appendChild(tbody);
+// 	table.appendChild(tbody);
 
-	return table;
-}
+// 	return table;
+// }
 
 //=============================================================================
 // Play and stop music functions
