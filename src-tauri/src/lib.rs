@@ -1,5 +1,5 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-use blake3::Hasher;
+use xxhash_rust::xxh3::Xxh3;
 use rodio::{Decoder, OutputStream, OutputStreamBuilder, Sink};
 use rusqlite::{params, Connection, OptionalExtension};
 use serde_json::{json, Value};
@@ -362,10 +362,11 @@ fn stop_music_file(state: tauri::State<AudioState>) -> Result<(), String> {
 
 #[tauri::command]
 //=============================================================================
-// Generate a unique hash for a music file based on its decoded audio data using the Blake3 hashing algorithm
-// This allows us to identify the same audio content even if the file is renamed or has different metadata
+// Generate a unique hash for a music file based on its decoded audio data using
+// the XXH3 hashing algorithm. This allows us to identify the same audio content
+// even if the file is renamed or has different metadata
 //=============================================================================
-fn decoded_audio_blake3_hash(pathname: String) -> Result<String, String> {
+fn decoded_audio_xxh3_hash(pathname: String) -> Result<String, String> {
     let path = Path::new(&pathname);
 
     let file = File::open(path).map_err(|e| e.to_string())?;
@@ -462,7 +463,7 @@ pub fn run() {
             get_path_separator,
             play_music_file,
             stop_music_file,
-            decoded_audio_blake3_hash
+            decoded_audio_xxh3_hash
         ])
         .setup(|app| {
             ensure_ratings_database(app.handle())
