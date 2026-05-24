@@ -1,10 +1,10 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-use xxhash_rust::xxh3::Xxh3;
 use rodio::{Decoder, OutputStream, OutputStreamBuilder, Sink};
 use rusqlite::{params, Connection, OptionalExtension};
 use serde_json::{json, Value};
 use std::fs;
 use std::fs::File;
+use std::hash::Hasher;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex};
@@ -17,6 +17,7 @@ use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
 use tauri::Manager;
+use std::collections::hash_map::DefaultHasher;
 
 struct AudioState {
     stream: Mutex<Option<OutputStream>>,
@@ -174,7 +175,7 @@ fn get_rating(pathname: String, app: tauri::AppHandle) -> Result<Value, String> 
 //=============================================================================
 fn populate_audio_hash_in_background(app: tauri::AppHandle, pathname: String) {
     std::thread::spawn(move || {
-        let audio_hash = match decoded_audio_blake3_hash(pathname.clone()) {
+        let audio_hash = match decoded_audio_hash(pathname.clone()) {
             Ok(audio_hash) => audio_hash,
             Err(e) => {
                 eprintln!("Failed to generate audio hash for {}: {}", pathname, e);
@@ -360,13 +361,11 @@ fn stop_music_file(state: tauri::State<AudioState>) -> Result<(), String> {
     Ok(())
 }
 
+//=============================================================================
+// Generate a unique hash for a music file based on its decoded audio data.
+//=============================================================================
 #[tauri::command]
-//=============================================================================
-// Generate a unique hash for a music file based on its decoded audio data using
-// the XXH3 hashing algorithm. This allows us to identify the same audio content
-// even if the file is renamed or has different metadata
-//=============================================================================
-fn decoded_audio_xxh3_hash(pathname: String) -> Result<String, String> {
+fn decoded_audio_hash(pathname: String) -> Result<String, String> {
     let path = Path::new(&pathname);
 
     let file = File::open(path).map_err(|e| e.to_string())?;
@@ -401,7 +400,7 @@ fn decoded_audio_xxh3_hash(pathname: String) -> Result<String, String> {
 
     let track_id = track.id;
 
-    let mut hasher = Hasher::new();
+    let mut hasher = DefaultHasher::new();
 
     loop {
         let packet = match format.next_packet() {
@@ -432,11 +431,11 @@ fn decoded_audio_xxh3_hash(pathname: String) -> Result<String, String> {
         sample_buffer.copy_interleaved_ref(decoded);
 
         for sample in sample_buffer.samples() {
-            hasher.update(&sample.to_le_bytes());
+            hasher.write(&sample.to_le_bytes());
         }
     }
 
-    Ok(hasher.finalize().to_hex().to_string())
+    Ok(format!("{:016x}", hasher.finish()))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -463,7 +462,7 @@ pub fn run() {
             get_path_separator,
             play_music_file,
             stop_music_file,
-            decoded_audio_xxh3_hash
+            decoded_audio_hash
         ])
         .setup(|app| {
             ensure_ratings_database(app.handle())
