@@ -33,4 +33,4 @@ dirs-next = "2"
 rodio = { version = "0.21", features = ["playback", "symphonia-all"] }
 rusqlite = { version = "0.32", features = ["bundled"] }
 symphonia = { version = "0.5", features = ["all"] }
-xxhash-rust = "0.8.15"
+xxhash-rust = { version = "0.8.15", features = ["xxh3"] }
