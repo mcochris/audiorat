@@ -2,12 +2,13 @@
 use rodio::{Decoder, OutputStream, OutputStreamBuilder, Sink};
 use rusqlite::{params, Connection, OptionalExtension};
 use serde_json::{json, Value};
+use std::collections::hash_map::DefaultHasher;
 use std::fs;
 use std::fs::File;
 use std::hash::Hasher;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
-use std::sync::{Mutex};
+use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 use symphonia::core::audio::SampleBuffer;
 use symphonia::core::codecs::DecoderOptions;
@@ -17,7 +18,6 @@ use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
 use tauri::Manager;
-use std::collections::hash_map::DefaultHasher;
 
 struct AudioState {
     stream: Mutex<Option<OutputStream>>,
@@ -101,8 +101,7 @@ fn create_database(app: tauri::AppHandle) -> Result<(), String> {
 // Get the path to the ratings database
 //=============================================================================
 fn get_database_path(app: tauri::AppHandle) -> Result<String, String> {
-    ratings_database_path(&app)
-        .map(|path| path.to_string_lossy().into_owned())
+    ratings_database_path(&app).map(|path| path.to_string_lossy().into_owned())
 }
 
 #[tauri::command]
@@ -453,6 +452,7 @@ fn decoded_audio_hash(pathname: String) -> Result<String, String> {
 //=============================================================================
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(AudioState {
             stream: Mutex::new(None),
             sink: Mutex::new(None),
