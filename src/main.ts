@@ -1,3 +1,6 @@
+//=============================================================================
+// main.ts - Main entry point for the Tauri application
+//=============================================================================
 import { invoke } from "@tauri-apps/api/core";
 import {
 	PhysicalPosition,
@@ -6,6 +9,9 @@ import {
 	getCurrentWindow,
 } from "@tauri-apps/api/window";
 
+//=============================================================================
+// Import styles and libraries
+//=============================================================================
 import { message } from '@tauri-apps/plugin-dialog';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -17,18 +23,28 @@ import * as bootstrap from "bootstrap";
 import { TabulatorFull as Tabulator } from 'tabulator-tables';
 import "./theme_toggle.js";
 
+//=============================================================================
+// DOM elements and global variables
+//=============================================================================
 const directoryDiv = document.querySelector("#directory") as HTMLDivElement;
 const currentPathDiv = document.querySelector("#currentPath") as HTMLDivElement;
 const musicFilesDiv = document.querySelector("#musicfiles") as HTMLDivElement;
 const backIconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/></svg> ';
 const homeIconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-house" viewBox="0 0 16 16"><path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5z"/></svg> ';
 const favoriteIconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart" viewBox="0 0 16 16"><path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143q.09.083.176.171a3 3 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15"/></svg> ';
+
+//=============================================================================
+// Initialize global state variables for current path and home directory
+//=============================================================================
 let homeDirectory = "";
 let pathSeparator = "/";
-
 let path = "";
 let currentPlayingPath: string | null = null;
 
+//=============================================================================
+// Function to update the current path display, showing a favorite icon if the
+// current path is the favorite directory
+//=============================================================================
 function updateCurrentPathDisplay() {
 	const favDir = localStorage.getItem("favoriteDirectory") || "";
 
@@ -40,6 +56,10 @@ function updateCurrentPathDisplay() {
 	currentPathDiv.textContent = `Current Path: ${path}`;
 }
 
+//=============================================================================
+// Helper functions to create action links and append navigation items to the
+// directory list
+//=============================================================================
 function createActionLink(labelHtml: string, action: string, value?: string) {
 	const link = document.createElement("a") as HTMLAnchorElement;
 
@@ -54,6 +74,10 @@ function createActionLink(labelHtml: string, action: string, value?: string) {
 	return link;
 }
 
+//=============================================================================
+// Append a navigation item to the directory list if the shouldRender condition
+// is true
+//=============================================================================
 function appendNavItem(
 	list: HTMLUListElement,
 	shouldRender: boolean,
@@ -74,6 +98,11 @@ function appendNavItem(
 	return true;
 }
 
+//=============================================================================
+// Event listener for clicks on the directory list, using event delegation to
+// handle clicks on dynamically generated links for navigation and favorite
+// directory actions
+//=============================================================================
 directoryDiv.addEventListener("click", async (event) => {
 	const target = (event.target as HTMLElement).closest("a[data-action]") as HTMLAnchorElement | null;
 
@@ -108,6 +137,11 @@ directoryDiv.addEventListener("click", async (event) => {
 	await listDirectories();
 });
 
+//=============================================================================
+// Event listener for clicks on the music files list, using event delegation to
+// handle play/stop actions and rating clear actions for dynamically generated
+// music file entries
+//=============================================================================
 musicFilesDiv.addEventListener("click", async (event) => {
 	const target = event.target as HTMLElement;
 	const playButton = target.closest("button[data-action='play-toggle']") as HTMLButtonElement | null;
@@ -154,6 +188,11 @@ musicFilesDiv.addEventListener("click", async (event) => {
 	await clearRating(filePath);
 });
 
+//=============================================================================
+// Event listener for changes to the rating radio buttons in the music files list,
+// using event delegation to handle rating actions for dynamically generated music
+// file entries
+//=============================================================================
 musicFilesDiv.addEventListener("change", (event) => {
 	const radio = (event.target as HTMLElement).closest("input[type='radio'][data-file-path]") as HTMLInputElement | null;
 
@@ -307,6 +346,10 @@ async function listMusicFiles() {
 		]
 	});
 
+	//=============================================================================
+	// Formatter for the file path column, creating a clickable link that plays or
+	// stops the music file
+	//=============================================================================
 	function pathNameFormatter(cell: Tabulator.CellComponent) {
 		const filePath = cell.getValue() as string;
 		const fileName = filePath.split(pathSeparator as string).pop() || filePath;
@@ -330,6 +373,10 @@ async function listMusicFiles() {
 		return link;
 	}
 
+	//=============================================================================
+	// Formatter for the rating column, creating interactive star buttons for rating
+	// music files and a clear button to remove the rating
+	//=============================================================================
 	function ratingFormatter(cell: Tabulator.CellComponent) {
 		const rowData = cell.getRow().getData() as { filepath: string; rating: number | false };
 		const filePath = rowData.filepath;
